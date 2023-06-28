@@ -52,16 +52,24 @@ function criarTabela() {
 
       newListItem.appendChild(newLink);
       navBar.appendChild(newListItem);
+
+      // Refresh the page
+      location.reload();
     })
     .catch((error) => {
       console.error('There has been a problem with your fetch operation:', error);
     });
 }
 
+
 function getFormHtml() {
   return `
+  <br>
     <div class="container">
-      <div class="row mt-3">
+       <div class="col">
+          <p><strong>Adicionar Colunas</strong></p<
+        </div>
+      <div class="row mt-3"> 
         <div class="col-3">
           <label for="inputName" class="form-label">Name</label>
           <input type="text" class="form-control" id="inputName">
@@ -80,17 +88,7 @@ function getFormHtml() {
           <label for="inputValue" class="form-label">Length/Values</label>
           <input type="text" class="form-control" id="inputValue">
         </div>
-        <div class="col-3">
-          <label for="inputIndex" class="form-label">Index</label>
-          <select class="form-control" id="inputIndex">
-            <option value="">---</option>
-            <option value="PRIMARY">PRIMARY</option>
-            <option value="UNIQUE">UNIQUE</option>
-            <option value="INDEX">INDEX</option>
-            <option value="FULLTEXT">FULLTEXT</option>
-            <option value="SPATIAL">SPATIAL</option>
-          </select>
-        </div>
+        
       </div>
       <button type="button" id="create-column-button" class="btn btn-primary" style="float: right;">CRIAR</button>
     </div>
@@ -129,7 +127,6 @@ function displayTableColumns(tableName) {
         var columnName = document.getElementById('inputName').value;
         var dataType = document.getElementById('inputType').value;
         var length = document.getElementById('inputValue').value;
-        var index = document.getElementById('inputIndex').value;
 
         if (columnName === '' || dataType === '' || length === '') {
           alert('Por favor, preencha todos os campos!');
@@ -141,7 +138,7 @@ function displayTableColumns(tableName) {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ tableName: tableName, columnName: columnName, dataType: dataType, length: length, index: index })
+          body: JSON.stringify({ tableName: tableName, columnName: columnName, dataType: dataType, length: length })
         })
           .then((response) => {
             if (!response.ok) {
@@ -155,7 +152,6 @@ function displayTableColumns(tableName) {
             document.getElementById('inputName').value = '';
             document.getElementById('inputType').value = '';
             document.getElementById('inputValue').value = '';
-            document.getElementById('inputIndex').value = '';
             // Atualizar a exibição de colunas
             displayTableColumns(tableName);
           })

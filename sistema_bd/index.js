@@ -81,8 +81,7 @@ app.get('/get-table-columns/:tableName', function (req, res) {
     const columns = results.map(row => ({
       name: row.Field,
       type: row.Type,
-      length: row.Length,
-      index: row.Key
+      length: row.Length
     }));
     res.json({ columns: columns });
   });
