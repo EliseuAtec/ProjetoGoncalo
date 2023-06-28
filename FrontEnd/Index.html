@@ -13,10 +13,10 @@
   <script src="../sistema_bd/function.js"></script>
 </head>
 
-<body>
+
   <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="#"><img src="Logo.png" alt="" width="50px"></a>
+      
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -24,34 +24,28 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="#home">INICIO</a>
-          </li>
-          <li class="nav-item">
+            <a class="nav-link" id="inputNametable" href="#" onclick="btnCriarNomeTabela()">INICIO</a>
+          </li>          
+          <!-- <li class="nav-item">
             <a class="nav-link" href="#section1">MINHAS BASES</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#section2">Section 2</a>
-          </li>
+          </li> -->
+          
         </ul>
       </div>
     </nav>
   </header>
 
+<body>
 
-<!--Codigo para usuario definir o nome da tabela criada..-->
-  <div class="container">
-    <div class="row mt-3">
-      <div class="col-3">
-        <label for="inputNametable" class="form-label">NOME DA TABELA:</label>
-        <input type="text" class="form-control" id="inputNametable">
-      </div>
-      <button type="button" class="btn btn-primary" onclick="btnCriarNomeTabela()" style="float: right;">CRIAR</button>
-  
+<div id="columnsDiv"></div>
+
+
+
       
 
 
 <!--Este codigo vai surgir quando o usuario definir o nome da tabela....-->
-<div id="aparecerCamposEstrutura" style="display: none;">
+<!--
   <div class="container">
     <div class="row mt-3">
       <div class="col-3">
@@ -84,9 +78,11 @@
           </select>
       </div>
     </div>
-    <button type="button" class="btn btn-primary" onclick="clickAdd()" style="float: right;">+ Add</button>
-  </div>
+    <button type="button" class="btn btn-primary" style="float: right;">CRIAR</button>
 
+  </div>
+  
+ 
     <br><br><br>
     <div class="row">
       <div class="col">
@@ -105,10 +101,13 @@
       </div>
     </div>
 
+   
+
     <button type="button" class="btn btn-primary" onclick="clickAdd()" style="float: right;">SALVAR</button>
 
   </div>
-
+-->
+</body>
   <footer class="footer mt-auto py-3">
     <div class="container">
       <div class="row" style="align-items: center;">
@@ -119,13 +118,12 @@
     </div>
   </footer>
 
-
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
     integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
     crossorigin="anonymous"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzI#"></script>
-
-</body>
-
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" 
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" 
+    crossorigin="anonymous">
+  </script>
+  
 </html>
