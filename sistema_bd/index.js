@@ -41,6 +41,25 @@ app.post('/create-table', (req, res) => {
   });
 });
 
+app.post('/create-column', (req, res) => {
+  const { tableName, columnName, dataType, length } = req.body;
+  
+  // Você pode precisar validar e formatar os tipos de dados de acordo com as necessidades do seu projeto.
+  // Neste exemplo, suponho que você esteja lidando apenas com tipos de dados que podem ter um comprimento definido (como VARCHAR)
+  const query = `ALTER TABLE ${tableName} ADD ${columnName} ${dataType}(${length})`;
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('An error occurred while creating the column:', error);
+      res.status(500).send('An error occurred while creating the column.');
+      return;
+    }
+    console.log(`Successfully added column ${columnName} to table ${tableName}!`);
+    res.send(`Successfully added column ${columnName} to table ${tableName}!`);
+  });
+});
+
+
 //Obtem nomes das tabela para a navbar
 app.get('/get-tables', function (req, res) {
   connection.query('SHOW TABLES', function (error, results, fields) {
