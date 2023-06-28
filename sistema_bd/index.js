@@ -77,10 +77,17 @@ app.get('/get-tables', function (req, res) {
 app.get('/get-table-columns/:tableName', function (req, res) {
   const { tableName } = req.params;
   connection.query(`SHOW COLUMNS FROM ${tableName}`, function (error, results) {
-      if (error) throw error;
-      res.json({ columns: results.map(row => row.Field) });
+    if (error) throw error;
+    const columns = results.map(row => ({
+      name: row.Field,
+      type: row.Type,
+      length: row.Length,
+      index: row.Key
+    }));
+    res.json({ columns: columns });
   });
 });
+
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

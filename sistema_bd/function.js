@@ -1,7 +1,6 @@
-
 function btnCriarNomeTabela() {
   var aparecerCamposEstrutura = document.getElementById('columnsDiv');
-  
+
   aparecerCamposEstrutura.innerHTML = `
     <div class="container">
       <div class="row mt-3">
@@ -15,8 +14,7 @@ function btnCriarNomeTabela() {
   `;
 }
 
-
-//Cria Uma nova tabela
+// Cria Uma nova tabela
 function criarTabela() {
   var inputNametable = document.getElementById('table-name-input');
   var tableName = inputNametable.value.trim();
@@ -96,12 +94,21 @@ function getFormHtml() {
       </div>
       <button type="button" id="create-column-button" class="btn btn-primary" style="float: right;">CRIAR</button>
     </div>
+
+    <table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
   `;
 }
 
-
-
-// Carrega as colunas da tabela 
+// Carrega as colunas da tabela
 function displayTableColumns(tableName) {
   console.log('About to fetch table columns for:', tableName);
   fetch(`http://localhost:3000/get-table-columns/${tableName}`, {
@@ -118,12 +125,12 @@ function displayTableColumns(tableName) {
       columnsDiv.insertAdjacentHTML('beforeend', getFormHtml());
 
       var createColumnButton = document.getElementById('create-column-button');
-      createColumnButton.addEventListener('click', function() {
+      createColumnButton.addEventListener('click', function () {
         var columnName = document.getElementById('inputName').value;
         var dataType = document.getElementById('inputType').value;
         var length = document.getElementById('inputValue').value;
         var index = document.getElementById('inputIndex').value;
-        
+
         if (columnName === '' || dataType === '' || length === '') {
           alert('Por favor, preencha todos os campos!');
           return;
@@ -156,12 +163,25 @@ function displayTableColumns(tableName) {
             console.error('There has been a problem with your fetch operation:', error);
           });
       });
+      console.log('Fetched table columns:', data);
+
+      data.columns.forEach(column => {
+        console.log('Column name:', column.name);
+        console.log('Column type:', column.type);
+      });
 
       // Use data.columns em vez de apenas data
-      data.columns.forEach(column_name => {
-        var newParagraph = document.createElement('p');
-        newParagraph.textContent = column_name;
-        columnsDiv.appendChild(newParagraph);
+      var tableBody = document.querySelector('.table tbody');
+      tableBody.innerHTML = '';
+
+      data.columns.forEach(column => {
+        console.log('Column:', column);
+        var newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${column.name}</td>
+            <td>${column.type}</td>
+          `;
+        tableBody.appendChild(newRow);
       });
     })
     .catch((error) => {
@@ -170,58 +190,12 @@ function displayTableColumns(tableName) {
 }
 
 
-//Cria coluna na BD
-function createColumn() {
-  var inputName = document.getElementById('inputName');
-  var inputType = document.getElementById('inputType');
-  var inputValue = document.getElementById('inputValue');
-
-  var columnName = inputName.value.trim();
-  var dataType = inputType.value.trim();
-  var length = inputValue.value.trim();
-
-  if (columnName === '' || dataType === '') {
-    alert('Por favor, insira um nome e um tipo para a coluna!');
-    return;
-  }
-
-  fetch('http://localhost:3000/create-column', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ tableName: activeTableName, columnName: columnName, dataType: dataType, length: length })
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then((data) => {
-      console.log(data);
-      inputName.value = ''; 
-      inputType.value = '';
-      inputValue.value = '';
-
-      displayTableColumns(activeTableName); // Atualizar a exibição das colunas da tabela
-    })
-    .catch((error) => {
-      console.error('There has been a problem with your fetch operation:', error);
-    });
-}
-
-
-
-
-
-
 // Recarrega a página ao clicar em um link da navbar
 function reloadPage(tableName) {
   location.reload();
 }
 
-window.onload = function() {
+window.onload = function () {
   fetch('http://localhost:3000/get-tables', {
     method: 'GET',
   })
@@ -238,7 +212,7 @@ window.onload = function() {
         newLink.href = "#" + table_name;
         newLink.textContent = table_name;
         var activeTableName = '';
-        newLink.onclick = function() {
+        newLink.onclick = function () {
           activeTableName = table_name;
           // Remove a classe 'active' de todos os links da navbar
           var navLinks = document.getElementsByClassName('nav-link');
@@ -250,10 +224,12 @@ window.onload = function() {
 
           // Limpa o conteúdo do columnsDiv
           var columnsDiv = document.getElementById('columnsDiv');
-          columnsDiv.innerHTML = '';
+          if (columnsDiv) {
+            columnsDiv.innerHTML = '';
 
-          // Exibe o conteúdo das colunas da tabela
-          displayTableColumns(table_name);
+            // Exibe o conteúdo das colunas da tabela
+            displayTableColumns(table_name);
+          }
         };
 
         newListItem.appendChild(newLink);
@@ -263,4 +239,4 @@ window.onload = function() {
     .catch((error) => {
       console.error('Error:', error);
     });
-}
+};
