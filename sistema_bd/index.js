@@ -75,6 +75,22 @@ app.post('/remove-column', (req, res) => {
   });
 });
 
+app.post('/delete-table', (req, res) => {
+  const { tableName } = req.body;
+  const query = `DROP TABLE ${tableName}`;
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('An error occurred while deleting the table:', error);
+      res.status(500).send('An error occurred while deleting the table.');
+      return;
+    }
+    console.log(`Successfully deleted table ${tableName}!`);
+    res.send(`Successfully deleted table ${tableName}!`);
+  });
+});
+
+
 
 //Obtem nomes das tabela para a navbar
 app.get('/get-tables', function (req, res) {

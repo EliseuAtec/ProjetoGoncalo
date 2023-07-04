@@ -65,7 +65,10 @@ function criarTabela() {
 function getFormHtml() {
   return `
   <br>
-    <div class="container">
+ 
+    <div class="container"> 
+    <button type="button" id="remove-table-button" class="btn btn-danger" style="float: right;">Apagar Tabela</button>
+    <br>
        <div class="col">
           <p><strong>Adicionar Colunas</strong></p<
         </div>
@@ -106,6 +109,48 @@ function getFormHtml() {
   `;
 }
 
+function apagarTabela(tableName) {
+  var confirmDelete = confirm("Tem certeza que deseja apagar a tabela " + tableName + "?");
+
+  if (confirmDelete) {
+    fetch('http://localhost:3000/delete-table', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tableName: tableName })
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then((data) => {
+        console.log(data);
+        // Remover o link da navbar
+        var navBar = document.getElementsByClassName('navbar-nav')[0];
+        var tableLink = document.getElementById(tableName);
+        console.log('Element to remove:', tableLink);
+        tableLink.parentNode.removeChild(tableLink);
+
+        // Limpar o conteúdo do columnsDiv
+        var columnsDiv = document.getElementById('columnsDiv');
+        columnsDiv.innerHTML = '';
+
+        // Recarregar a página
+        location.reload();
+      })
+      .catch((error) => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
+  }
+}
+
+
+
+
+
 // Carrega as colunas da tabela
 function displayTableColumns(tableName) {
   console.log('About to fetch table columns for:', tableName);
@@ -121,6 +166,11 @@ function displayTableColumns(tableName) {
       columnsDiv.innerHTML = '';
 
       columnsDiv.insertAdjacentHTML('beforeend', getFormHtml());
+
+      var removeTableButton = document.getElementById('remove-table-button');
+      removeTableButton.addEventListener('click', function () {
+        apagarTabela(tableName);
+      });
 
       var createColumnButton = document.getElementById('create-column-button');
       createColumnButton.addEventListener('click', function () {
