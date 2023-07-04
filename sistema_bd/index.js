@@ -59,6 +59,22 @@ app.post('/create-column', (req, res) => {
   });
 });
 
+app.post('/remove-column', (req, res) => {
+  const { tableName, columnName } = req.body;
+  
+  const query = `ALTER TABLE ${tableName} DROP COLUMN ${columnName}`;
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('An error occurred while removing the column:', error);
+      res.status(500).send('An error occurred while removing the column.');
+      return;
+    }
+    console.log(`Successfully removed column ${columnName} from table ${tableName}!`);
+    res.send(`Successfully removed column ${columnName} from table ${tableName}!`);
+  });
+});
+
 
 //Obtem nomes das tabela para a navbar
 app.get('/get-tables', function (req, res) {

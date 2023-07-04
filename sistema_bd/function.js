@@ -173,9 +173,13 @@ function displayTableColumns(tableName) {
       data.columns.forEach(column => {
         console.log('Column:', column);
         var newRow = document.createElement('tr');
+
+        var removeButtonHTML = column.name.toLowerCase() !== 'id' ? `<td><button onclick="removeColumn('${tableName}', '${column.name}')" class="btn btn-danger">Remover</button></td>` : '';
+
         newRow.innerHTML = `
             <td>${column.name}</td>
             <td>${column.type}</td>
+            ${removeButtonHTML}
           `;
         tableBody.appendChild(newRow);
       });
@@ -183,6 +187,30 @@ function displayTableColumns(tableName) {
     .catch((error) => {
       console.error('Error:', error);
     });
+}
+
+function removeColumn(tableName, columnName) {
+  fetch(`http://localhost:3000/remove-column`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tableName: tableName, columnName: columnName })
+  })
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.text();
+  })
+  .then((data) => {
+    console.log(data);
+    // Atualizar a exibição de colunas
+    displayTableColumns(tableName);
+  })
+  .catch((error) => {
+    console.error('There has been a problem with your fetch operation:', error);
+  });
 }
 
 
