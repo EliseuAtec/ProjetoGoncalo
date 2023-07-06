@@ -59,6 +59,33 @@ app.post('/create-column', (req, res) => {
   });
 });
 
+app.post('/add-data', (req, res) => {
+  const { tableName, rowData } = req.body;
+
+  // Check if rowData is null or undefined
+  if (!rowData) {
+    console.error('rowData is null or undefined');
+    res.status(400).send('rowData is required');
+    return;
+  }
+
+  // Prepare the SQL query string
+  const columns = Object.keys(rowData).join(',');
+  const values = Object.values(rowData).map(value => mysql.escape(value)).join(',');
+
+  const query = `INSERT INTO ${tableName} (${columns}) VALUES (${values})`;
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('An error occurred while adding data:', error);
+      res.status(500).send('An error occurred while adding data.');
+      return;
+    }
+    console.log(`Successfully added data to table ${tableName}!`);
+    res.send(`Successfully added data to table ${tableName}!`);
+  });
+});
+
 app.post('/remove-column', (req, res) => {
   const { tableName, columnName } = req.body;
   
@@ -90,8 +117,6 @@ app.post('/delete-table', (req, res) => {
   });
 });
 
-
-
 //Obtem nomes das tabela para a navbar
 app.get('/get-tables', function (req, res) {
   connection.query('SHOW TABLES', function (error, results, fields) {
@@ -119,6 +144,26 @@ app.get('/get-table-columns/:tableName', function (req, res) {
   });
 });
 
+app.get('/get-data', (req, res) => {
+  const tableName = req.query.tableName;
+
+  if (!tableName) {
+    res.status(400).send('Table name is required');
+    return;
+  }
+
+  const query = `SELECT * FROM ${tableName}`;
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('An error occurred while getting data:', error);
+      res.status(500).send('An error occurred while getting data.');
+      return;
+    }
+
+    res.send(results);
+  });
+});
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

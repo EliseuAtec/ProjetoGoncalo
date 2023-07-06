@@ -70,7 +70,7 @@ function getFormHtml() {
     <button type="button" id="remove-table-button" class="btn btn-danger" style="float: right;">Apagar Tabela</button>
     <br>
        <div class="col">
-          <p><strong>Adicionar Colunas</strong></p<
+       <p><strong>Adicionar Colunas</strong></p>
         </div>
       <div class="row mt-3"> 
         <div class="col-3">
@@ -95,60 +95,45 @@ function getFormHtml() {
       </div>
       <button type="button" id="create-column-button" class="btn btn-primary" style="float: right;">CRIAR</button>
     </div>
+    <div class="container"> 
+        <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
 
-    <table class="table">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    </div>
+    
   `;
 }
 
-function apagarTabela(tableName) {
-  var confirmDelete = confirm("Tem certeza que deseja apagar a tabela " + tableName + "?");
 
-  if (confirmDelete) {
-    fetch('http://localhost:3000/delete-table', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ tableName: tableName })
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then((data) => {
-        console.log(data);
-        // Remover o link da navbar
-        var navBar = document.getElementsByClassName('navbar-nav')[0];
-        var tableLink = document.getElementById(tableName);
-        console.log('Element to remove:', tableLink);
-        tableLink.parentNode.removeChild(tableLink);
-
-        // Limpar o conteúdo do columnsDiv
-        var columnsDiv = document.getElementById('columnsDiv');
-        columnsDiv.innerHTML = '';
-
-        // Recarregar a página
-        location.reload();
-      })
-      .catch((error) => {
-        console.error('There has been a problem with your fetch operation:', error);
-      });
-  }
+function getFormHtmlData() {
+  return `
+  <br>
+    <div class="container"> 
+    <br>
+    <div class="col">
+       <p><strong>Adicionar Dados</strong></p>
+    </div>
+    <div id="dados"></div>
+    <br>
+    
+       <div class="col">
+          <button type="button" class="btn btn-primary" id="add-data-button" style="float: right;">Adicionar</button>
+       </div>
+    
+    </div>
+    <div class="container"> 
+     <div id="dataTableContainer"></div> 
+    </div>
+  <br>
+  `;
 }
-
-
-
 
 
 // Carrega as colunas da tabela
@@ -166,6 +151,7 @@ function displayTableColumns(tableName) {
       columnsDiv.innerHTML = '';
 
       columnsDiv.insertAdjacentHTML('beforeend', getFormHtml());
+      
 
       var removeTableButton = document.getElementById('remove-table-button');
       removeTableButton.addEventListener('click', function () {
@@ -233,11 +219,55 @@ function displayTableColumns(tableName) {
           `;
         tableBody.appendChild(newRow);
       });
+      displayTableData(tableName, data.columns)
     })
+    
+    
     .catch((error) => {
       console.error('Error:', error);
     });
+    
 }
+
+
+function apagarTabela(tableName) {
+  var confirmDelete = confirm("Tem certeza que deseja apagar a tabela " + tableName + "?");
+
+  if (confirmDelete) {
+    fetch('http://localhost:3000/delete-table', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tableName: tableName })
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then((data) => {
+        console.log(data);
+        // Remover o link da navbar
+        var navBar = document.getElementsByClassName('navbar-nav')[0];
+        var tableLink = document.getElementById(tableName);
+        console.log('Element to remove:', tableLink);
+        tableLink.parentNode.removeChild(tableLink);
+
+        // Limpar o conteúdo do columnsDiv
+        var columnsDiv = document.getElementById('columnsDiv');
+        columnsDiv.innerHTML = '';
+
+        // Recarregar a página
+        location.reload();
+      })
+      .catch((error) => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
+  }
+}
+
 
 function removeColumn(tableName, columnName) {
   fetch(`http://localhost:3000/remove-column`, {
@@ -314,3 +344,126 @@ window.onload = function () {
       console.error('Error:', error);
     });
 };
+
+// Carrega os dados da tabela
+function displayTableData(tableName, columns) {
+  var dataDiv = document.getElementById('dataDiv');
+  dataDiv.innerHTML = '';
+
+  dataDiv.insertAdjacentHTML('beforeend', getFormHtmlData());
+
+  var addButton = document.getElementById('add-data-button');
+  addButton.addEventListener('click', function () {
+    var columnData = {};
+    columns.forEach(column => {
+      var columnInputValue = document.getElementById('input-' + column.name).value;
+      columnData[column.name] = columnInputValue;
+    });
+
+    if (Object.values(columnData).some(value => value === '')) {
+      alert('Por favor, preencha todos os campos!');
+      return;
+    }
+
+    fetch('http://localhost:3000/add-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        tableName: tableName, 
+        rowData: columnData // Verifique se 'columnData' não é null ou undefined
+      })
+    })
+
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then((data) => {
+        console.log(data);
+        // Limpar os campos de entrada
+        columns.forEach(column => {
+          document.getElementById('input-' + column.name).value = '';
+        });
+        // Atualizar a exibição dos dados
+        displayTableData(tableName, columns);
+      })
+      .catch((error) => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
+  });
+
+  fetch(`http://localhost:3000/get-data?tableName=${tableName}`, {
+    method: 'GET',
+  })
+    .then(response => response.json())
+    .then(data => {
+      var dataTableContainer = document.getElementById('dataTableContainer');
+      dataTableContainer.innerHTML = '';
+
+      // Create a new table
+      var table = document.createElement('table');
+      table.className = 'table';
+
+      // Add table headers
+      var thead = document.createElement('thead');
+      var headerRow = document.createElement('tr');
+      columns.forEach(column => {
+        var th = document.createElement('th');
+        th.textContent = column.name;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Add table data
+      var tbody = document.createElement('tbody');
+      data.forEach(row => {
+        var dataRow = document.createElement('tr');
+        columns.forEach(column => {
+          var td = document.createElement('td');
+          td.textContent = row[column.name];
+          dataRow.appendChild(td);
+        });
+        tbody.appendChild(dataRow);
+      });
+      table.appendChild(tbody);
+
+      dataTableContainer.appendChild(table);
+    })
+    .catch(error => {
+      console.error('There has been a problem with your fetch operation:', error);
+    });
+
+
+// Crie um novo container para armazenar as linhas
+var rowContainer = document.createElement('div');
+rowContainer.className = 'row';
+
+columns.forEach(column => {
+  var newInputDiv = document.createElement('div');
+  newInputDiv.className = 'col-3';
+
+  var newLabel = document.createElement('label');
+  newLabel.for = 'input-' + column.name;
+  newLabel.className = 'form-label';
+  newLabel.textContent = column.name;
+
+  var newInput = document.createElement('input');
+  newInput.type = 'text';
+  newInput.className = 'form-control';
+  newInput.id = 'input-' + column.name;
+
+  newInputDiv.appendChild(newLabel);
+  newInputDiv.appendChild(newInput);
+
+  // Adicione o newInputDiv ao rowContainer, em vez da linha existente
+  rowContainer.appendChild(newInputDiv);
+});
+
+// Adicione o rowContainer ao dataDiv
+dados.appendChild(rowContainer);
+}
