@@ -14,54 +14,6 @@ function btnCriarNomeTabela() {
   `;
 }
 
-// Cria Uma nova tabela
-function criarTabela() {
-  var inputNametable = document.getElementById('table-name-input');
-  var tableName = inputNametable.value.trim();
-  if (tableName === '') {
-    alert('Por favor, insira um nome para a tabela!');
-    return;
-  }
-
-  fetch('http://localhost:3000/create-table', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ tableName: tableName })
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then((data) => {
-      console.log(data);
-      inputNametable.value = ''; // Limpar o campo de entrada do nome da tabela
-
-      // Adicionar o link na navbar
-      var navBar = document.getElementById('navbarNav').getElementsByTagName('ul')[0];
-      var newListItem = document.createElement('li');
-      newListItem.className = 'nav-item';
-
-      var newLink = document.createElement('a');
-      newLink.className = 'nav-link';
-      newLink.href = '#' + tableName;
-      newLink.textContent = tableName;
-
-      newListItem.appendChild(newLink);
-      navBar.appendChild(newListItem);
-
-      // Refresh the page
-      location.reload();
-    })
-    .catch((error) => {
-      console.error('There has been a problem with your fetch operation:', error);
-    });
-}
-
-
 function getFormHtml() {
   return `
   <br>
@@ -111,7 +63,6 @@ function getFormHtml() {
   `;
 }
 
-
 function getFormHtmlData() {
   return `
   <br>
@@ -135,6 +86,52 @@ function getFormHtmlData() {
   `;
 }
 
+// Cria Uma nova tabela
+function criarTabela() {
+  var inputNametable = document.getElementById('table-name-input');
+  var tableName = inputNametable.value.trim();
+  if (tableName === '') {
+    alert('Por favor, insira um nome para a tabela!');
+    return;
+  }
+
+  fetch('http://localhost:3000/create-table', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tableName: tableName })
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.text();
+    })
+    .then((data) => {
+      console.log(data);
+      inputNametable.value = ''; // Limpar o campo de entrada do nome da tabela
+
+      // Adicionar o link na navbar
+      var navBar = document.getElementById('navbarNav').getElementsByTagName('ul')[0];
+      var newListItem = document.createElement('li');
+      newListItem.className = 'nav-item';
+
+      var newLink = document.createElement('a');
+      newLink.className = 'nav-link';
+      newLink.href = '#' + tableName;
+      newLink.textContent = tableName;
+
+      newListItem.appendChild(newLink);
+      navBar.appendChild(newListItem);
+
+      // Refresh the page
+      location.reload();
+    })
+    .catch((error) => {
+      console.error('There has been a problem with your fetch operation:', error);
+    });
+}
 
 // Carrega as colunas da tabela
 function displayTableColumns(tableName) {
@@ -229,129 +226,14 @@ function displayTableColumns(tableName) {
     
 }
 
-
-function apagarTabela(tableName) {
-  var confirmDelete = confirm("Tem certeza que deseja apagar a tabela " + tableName + "?");
-
-  if (confirmDelete) {
-    fetch('http://localhost:3000/delete-table', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ tableName: tableName })
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then((data) => {
-        console.log(data);
-        // Remover o link da navbar
-        var navBar = document.getElementsByClassName('navbar-nav')[0];
-        var tableLink = document.getElementById(tableName);
-        console.log('Element to remove:', tableLink);
-        tableLink.parentNode.removeChild(tableLink);
-
-        // Limpar o conteúdo do columnsDiv
-        var columnsDiv = document.getElementById('columnsDiv');
-        columnsDiv.innerHTML = '';
-
-        // Recarregar a página
-        location.reload();
-      })
-      .catch((error) => {
-        console.error('There has been a problem with your fetch operation:', error);
-      });
-  }
-}
-
-
-function removeColumn(tableName, columnName) {
-  fetch(`http://localhost:3000/remove-column`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ tableName: tableName, columnName: columnName })
-  })
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return response.text();
-  })
-  .then((data) => {
-    console.log(data);
-    // Atualizar a exibição de colunas
-    displayTableColumns(tableName);
-  })
-  .catch((error) => {
-    console.error('There has been a problem with your fetch operation:', error);
-  });
-}
-
-
-// Recarrega a página ao clicar em um link da navbar
-function reloadPage(tableName) {
-  location.reload();
-}
-
-window.onload = function () {
-  fetch('http://localhost:3000/get-tables', {
-    method: 'GET',
-  })
-    .then(response => response.json())
-    .then(data => {
-      var navBar = document.getElementsByClassName('navbar-nav')[0];
-      data.tables.forEach(table_name => {
-        var newListItem = document.createElement('li');
-        newListItem.className = "nav-item";
-
-        var newLink = document.createElement('a');
-        newLink.className = "nav-link";
-        newLink.id = table_name;
-        newLink.href = "#" + table_name;
-        newLink.textContent = table_name;
-        var activeTableName = '';
-        newLink.onclick = function () {
-          activeTableName = table_name;
-          // Remove a classe 'active' de todos os links da navbar
-          var navLinks = document.getElementsByClassName('nav-link');
-          for (var i = 0; i < navLinks.length; i++) {
-            navLinks[i].classList.remove('active');
-          }
-          // Adiciona a classe 'active' ao link clicado
-          this.classList.add('active');
-
-          // Limpa o conteúdo do columnsDiv
-          var columnsDiv = document.getElementById('columnsDiv');
-          if (columnsDiv) {
-            columnsDiv.innerHTML = '';
-
-            // Exibe o conteúdo das colunas da tabela
-            displayTableColumns(table_name);
-          }
-        };
-
-        newListItem.appendChild(newLink);
-        navBar.appendChild(newListItem);
-      });
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-    });
-};
-
 // Carrega os dados da tabela
 function displayTableData(tableName, columns) {
   var dataDiv = document.getElementById('dataDiv');
   dataDiv.innerHTML = '';
 
+  
   dataDiv.insertAdjacentHTML('beforeend', getFormHtmlData());
-
+  
   var addButton = document.getElementById('add-data-button');
   addButton.addEventListener('click', function () {
     var columnData = {};
@@ -416,6 +298,12 @@ function displayTableData(tableName, columns) {
         th.textContent = column.name;
         headerRow.appendChild(th);
       });
+
+      // Adicione um cabeçalho para a coluna de botões de remover
+      var removeTh = document.createElement('th');
+      
+      headerRow.appendChild(removeTh);
+
       thead.appendChild(headerRow);
       table.appendChild(thead);
 
@@ -428,6 +316,19 @@ function displayTableData(tableName, columns) {
           td.textContent = row[column.name];
           dataRow.appendChild(td);
         });
+        // Adicione um botão de remover a cada linha
+        var removeButton = document.createElement('button');
+        removeButton.textContent = 'Remover';
+        removeButton.className = 'btn btn-danger'; 
+        removeButton.addEventListener('click', () => {
+          removeData(tableName, row.id);
+        });
+
+
+        var removeTd = document.createElement('td');
+        removeTd.appendChild(removeButton);
+        dataRow.appendChild(removeTd);
+
         tbody.appendChild(dataRow);
       });
       table.appendChild(tbody);
@@ -467,3 +368,142 @@ columns.forEach(column => {
 // Adicione o rowContainer ao dataDiv
 dados.appendChild(rowContainer);
 }
+
+function apagarTabela(tableName) {
+  var confirmDelete = confirm("Tem certeza que deseja apagar a tabela " + tableName + "?");
+
+  if (confirmDelete) {
+    fetch('http://localhost:3000/delete-table', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tableName: tableName })
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then((data) => {
+        console.log(data);
+        // Remover o link da navbar
+        var navBar = document.getElementsByClassName('navbar-nav')[0];
+        var tableLink = document.getElementById(tableName);
+        console.log('Element to remove:', tableLink);
+        tableLink.parentNode.removeChild(tableLink);
+
+        // Limpar o conteúdo do columnsDiv
+        var columnsDiv = document.getElementById('columnsDiv');
+        columnsDiv.innerHTML = '';
+
+        // Recarregar a página
+        location.reload();
+      })
+      .catch((error) => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
+  }
+}
+
+function removeColumn(tableName, columnName) {
+  fetch(`http://localhost:3000/remove-column`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tableName: tableName, columnName: columnName })
+  })
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.text();
+  })
+  .then((data) => {
+    console.log(data);
+    // Atualizar a exibição de colunas
+    displayTableColumns(tableName);
+  })
+  .catch((error) => {
+    console.error('There has been a problem with your fetch operation:', error);
+  });
+}
+
+function removeData(tableName, id) {
+  fetch(`http://localhost:3000/remove-data`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tableName: tableName, id: id })
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.text();
+    })
+    .then((data) => {
+      console.log(data);
+      // Fetch the columns for the table again
+      fetch(`http://localhost:3000/get-table-columns/${tableName}`)
+        .then(response => response.json())
+        .then(columnData => {
+          // Use the column data to fetch the table data again
+          displayTableData(tableName, columnData.columns);
+        });
+    })
+    .catch((error) => {
+      console.error('There has been a problem with your fetch operation:', error);
+    });
+}
+
+window.onload = function () {
+  fetch('http://localhost:3000/get-tables', {
+    method: 'GET',
+  })
+    .then(response => response.json())
+    .then(data => {
+      var navBar = document.getElementsByClassName('navbar-nav')[0];
+      data.tables.forEach(table_name => {
+        var newListItem = document.createElement('li');
+        newListItem.className = "nav-item";
+
+        var newLink = document.createElement('a');
+        newLink.className = "nav-link";
+        newLink.id = table_name;
+        newLink.href = "#" + table_name;
+        newLink.textContent = table_name;
+        var activeTableName = '';
+        newLink.onclick = function () {
+          activeTableName = table_name;
+          // Remove a classe 'active' de todos os links da navbar
+          var navLinks = document.getElementsByClassName('nav-link');
+          for (var i = 0; i < navLinks.length; i++) {
+            navLinks[i].classList.remove('active');
+          }
+          // Adiciona a classe 'active' ao link clicado
+          this.classList.add('active');
+
+          // Limpa o conteúdo do columnsDiv
+          var columnsDiv = document.getElementById('columnsDiv');
+          if (columnsDiv) {
+            columnsDiv.innerHTML = '';
+
+            // Exibe o conteúdo das colunas da tabela
+            displayTableColumns(table_name);
+          }
+        };
+
+        newListItem.appendChild(newLink);
+        navBar.appendChild(newListItem);
+      });
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+};
+
+

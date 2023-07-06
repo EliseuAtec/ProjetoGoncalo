@@ -117,6 +117,36 @@ app.post('/delete-table', (req, res) => {
   });
 });
 
+app.post('/remove-data', (req, res) => {
+  const { tableName, id } = req.body;
+
+  // Certifique-se de que tanto 'tableName' quanto 'id' são fornecidos
+  if (!tableName || !id) {
+    res.status(400).send('Both tableName and id are required');
+    return;
+  }
+
+  // Prepare the SQL query string
+  const query = `DELETE FROM ${tableName} WHERE id = ?`;
+
+  connection.query(query, [id], (error, results) => {
+    if (error) {
+      console.error('An error occurred while removing data:', error);
+      res.status(500).send('An error occurred while removing data.');
+      return;
+    }
+
+    if (results.affectedRows === 0) {
+      res.status(404).send('No data found to remove.');
+      return;
+    }
+
+    console.log(`Successfully removed data from table ${tableName} with id ${id}!`);
+    res.send(`Successfully removed data from table ${tableName} with id ${id}!`);
+  });
+});
+
+
 //Obtem nomes das tabela para a navbar
 app.get('/get-tables', function (req, res) {
   connection.query('SHOW TABLES', function (error, results, fields) {
