@@ -12,7 +12,12 @@ function btnCriarNomeTabela() {
       </div>
     </div>
   `;
+
+  // Remover a função displayTableData, se já estiver presente
+  var dataDiv = document.getElementById('dataDiv');
+  dataDiv.innerHTML = '';
 }
+
 
 function getFormHtml() {
   return `
