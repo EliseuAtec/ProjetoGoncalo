@@ -287,5 +287,3 @@ function salvarEdicoes(linha) {
       console.error('Error:', error);
     });
 }
-
-

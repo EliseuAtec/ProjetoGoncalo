@@ -33,7 +33,6 @@ function preencherTabelas() {
       console.error('Error:', error); 
     });
 }
-
 // chama a função preencherTabelas quando a página carrega
 preencherTabelas();
 
@@ -137,7 +136,6 @@ function criarFormulario(estrutura) {
   // Adicionar o formulário ao container
   container.innerHTML = `<form>${formContent}</form>`;
 }
-
 
 // Função para inserir novos dados na tabela e aparecer tbm nos cards abaixo dos --DADOS--
 function inserirDados() {
@@ -299,8 +297,6 @@ cancelarBtn.onclick = () => {
   // Restaura o formulário de inserção
   document.getElementById('domtabela').innerHTML = formInsercaoHTML;
 };
-
-
 
 // Funcao para excluir dados da tabela selecionada
 function excluirDados(id) {
