@@ -106,34 +106,38 @@ function obterEstrutura(event) {
 function criarFormulario(estrutura) {
   const container = document.getElementById('domtabela');
 
-
   container.innerHTML = '';
-
 
   // cria o conteudo do formulario na tela
   let formContent = '';
   estrutura.forEach(campo => {
-    if (campo.Field !== 'id') { // Ignora o campo 'id' para o user n alterar
+    if (campo.Field !== 'id') { // Ignora o campo 'id' para o usuário não alterar
+      // Verifica o tipo do campo e define o tipo de input correspondente
+      let inputType = 'text';
+      if (campo.Type.toUpperCase().startsWith('INT')) {
+        inputType = 'number';
+      }
+
       formContent += `
-          <div class="form-group">
-            <label for="input${campo.Field}">${campo.Field}:</label>
-            <input type="text" class="form-control" id="input${campo.Field}">
-          </div>
-        `;
+        <div class="form-group">
+          <label for="input${campo.Field}">${campo.Field}:</label>
+          <input type="${inputType}" class="form-control" id="input${campo.Field}">
+        </div>
+      `;
     }
   });
 
-
   // Adicionar o botão de inserir ao conteúdo do formulário para subir a bd
   formContent += `
-      <div class="button-inserir col-12">
-        <button type="button" class="btn btn-dark" onclick="inserirDados()">+ INSERIR</button>
-      </div>
-    `;
+    <div class="button-inserir col-12">
+      <button type="button" class="btn btn-dark" onclick="inserirDados()">+ INSERIR</button>
+    </div>
+  `;
 
   // Adicionar o formulário ao container
   container.innerHTML = `<form>${formContent}</form>`;
 }
+
 
 // Função para inserir novos dados na tabela e aparecer tbm nos cards abaixo dos --DADOS--
 function inserirDados() {
