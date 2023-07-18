@@ -44,3 +44,9 @@
   .button-inserir{
     text-align: right;
   }
+
+
+  .borda-verde {
+    border: 2px solid green!important;
+
+  }

@@ -1,514 +1,291 @@
-function btnCriarNomeTabela() {
-  var aparecerCamposEstrutura = document.getElementById('columnsDiv');
-
-  aparecerCamposEstrutura.innerHTML = `
-    <div class="container">
-      <div class="row mt-3">
-        <div class="col-3">
-          <label for="table-name-input" class="form-label">NOME DA TABELA:</label>
-          <input type="text" class="form-control" id="table-name-input">
-        </div>
-        <button type="button" class="btn btn-primary" onclick="criarTabela()" style="float: right;">CRIAR</button>
-      </div>
-    </div>
-  `;
-
-  // Remover a função displayTableData, se já estiver presente
-  var dataDiv = document.getElementById('dataDiv');
-  dataDiv.innerHTML = '';
-}
-
-
-function getFormHtml() {
-  return `
-  <br>
- 
-    <div class="container"> 
-    <button type="button" id="remove-table-button" class="btn btn-danger" style="float: right;">Apagar Tabela</button>
-    <br>
-       <div class="col">
-       <p><strong>Adicionar Colunas</strong></p>
-        </div>
-      <div class="row mt-3"> 
-        <div class="col-3">
-          <label for="inputName" class="form-label">Name</label>
-          <input type="text" class="form-control" id="inputName">
-        </div>
-        <div class="col-3">
-          <label for="inputType" class="form-label">Type</label>
-          <select class="form-control" id="inputType">
-            <option value="">---</option>
-            <option value="INT">INT</option>
-            <option value="VARCHAR">VARCHAR</option>
-            <option value="TEXT">TEXT</option>
-            <option value="DATE">DATE</option>
-          </select>
-        </div>
-        <div class="col-3">
-          <label for="inputValue" class="form-label">Length/Values</label>
-          <input type="text" class="form-control" id="inputValue">
-        </div>
-        
-      </div>
-      <button type="button" id="create-column-button" class="btn btn-primary" style="float: right;">CRIAR</button>
-    </div>
-    <div class="container"> 
-        <table class="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    </div>
-    
-  `;
-}
-
-function getFormHtmlData() {
-  return `
-  <br>
-    <div class="container"> 
-    <br>
-    <div class="col">
-       <p><strong>Adicionar Dados</strong></p>
-    </div>
-    <div id="dados"></div>
-    <br>
-    
-       <div class="col">
-          <button type="button" class="btn btn-primary" id="add-data-button" style="float: right;">Adicionar</button>
-       </div>
-    
-    </div>
-    <div class="container"> 
-     <div id="dataTableContainer"></div> 
-    </div>
-  <br>
-  `;
-}
-
-// Cria Uma nova tabela
 function criarTabela() {
-  var inputNametable = document.getElementById('table-name-input');
-  var tableName = inputNametable.value.trim();
-  if (tableName === '') {
-    alert('Por favor, insira um nome para a tabela!');
+  const tableName = document.getElementById('inputNametable').value;
+  const tableRows = document.querySelectorAll('.criacaodecampos tbody tr');
+
+  if (tableRows.length === 0) {
+    alert('Por favor, adicione campos à tabela antes de criar.');
     return;
   }
+  if (tableName.length === 0) {
+    alert('NOME DA TABELA NECESSARIO.');
+    return;
+  }
+
+  const columns = Array.from(tableRows).map(row => {
+    const name = row.cells[0].textContent;
+    const type = row.cells[1].textContent;
+    const length = row.cells[2].textContent;
+    return `${name} ${type}(${length})`;
+  });
+
+  const query = `CREATE TABLE ${tableName}  (id INT AUTO_INCREMENT PRIMARY KEY, ${columns.join(', ')})`;
 
   fetch('http://localhost:3000/create-table', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ tableName: tableName })
+    body: JSON.stringify({ tableName, query }),
   })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then((data) => {
+    .then(response => response.text())
+    .then(data => {
       console.log(data);
-      inputNametable.value = ''; // Limpar o campo de entrada do nome da tabela
-
-      // Adicionar o link na navbar
-      var navBar = document.getElementById('navbarNav').getElementsByTagName('ul')[0];
-      var newListItem = document.createElement('li');
-      newListItem.className = 'nav-item';
-
-      var newLink = document.createElement('a');
-      newLink.className = 'nav-link';
-      newLink.href = '#' + tableName;
-      newLink.textContent = tableName;
-
-      newListItem.appendChild(newLink);
-      navBar.appendChild(newListItem);
-
-      // Refresh the page
       location.reload();
     })
     .catch((error) => {
-      console.error('There has been a problem with your fetch operation:', error);
-    });
-}
-
-// Carrega as colunas da tabela
-function displayTableColumns(tableName) {
-  console.log('About to fetch table columns for:', tableName);
-  fetch(`http://localhost:3000/get-table-columns/${tableName}`, {
-    method: 'GET',
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Fetched table columns:', data);
-      var columnsDiv = document.getElementById('columnsDiv');
-      console.log('columnsDiv element:', columnsDiv);
-      // Limpar o columnsDiv antes de adicionar novos parágrafos
-      columnsDiv.innerHTML = '';
-
-      columnsDiv.insertAdjacentHTML('beforeend', getFormHtml());
-      
-
-      var removeTableButton = document.getElementById('remove-table-button');
-      removeTableButton.addEventListener('click', function () {
-        apagarTabela(tableName);
-      });
-
-      var createColumnButton = document.getElementById('create-column-button');
-      createColumnButton.addEventListener('click', function () {
-        var columnName = document.getElementById('inputName').value;
-        var dataType = document.getElementById('inputType').value;
-        var length = document.getElementById('inputValue').value;
-
-        if (columnName === '' || dataType === '' || length === '') {
-          alert('Por favor, preencha todos os campos!');
-          return;
-        }
-
-        fetch('http://localhost:3000/create-column', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ tableName: tableName, columnName: columnName, dataType: dataType, length: length })
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.text();
-          })
-          .then((data) => {
-            console.log(data);
-            // Limpar os campos de entrada
-            document.getElementById('inputName').value = '';
-            document.getElementById('inputType').value = '';
-            document.getElementById('inputValue').value = '';
-            // Atualizar a exibição de colunas
-            displayTableColumns(tableName);
-          })
-          .catch((error) => {
-            console.error('There has been a problem with your fetch operation:', error);
-          });
-      });
-      console.log('Fetched table columns:', data);
-
-      data.columns.forEach(column => {
-        console.log('Column name:', column.name);
-        console.log('Column type:', column.type);
-      });
-
-      // Use data.columns em vez de apenas data
-      var tableBody = document.querySelector('.table tbody');
-      tableBody.innerHTML = '';
-
-      data.columns.forEach(column => {
-        console.log('Column:', column);
-        var newRow = document.createElement('tr');
-
-        var removeButtonHTML = column.name.toLowerCase() !== 'id' ? `<td><button onclick="removeColumn('${tableName}', '${column.name}')" class="btn btn-danger">Remover</button></td>` : '';
-
-        newRow.innerHTML = `
-            <td>${column.name}</td>
-            <td>${column.type}</td>
-            ${removeButtonHTML}
-          `;
-        tableBody.appendChild(newRow);
-      });
-      displayTableData(tableName, data.columns)
-    })
-    
-    
-    .catch((error) => {
       console.error('Error:', error);
     });
-    
 }
 
-// Carrega os dados da tabela
-function displayTableData(tableName, columns) {
-  var dataDiv = document.getElementById('dataDiv');
-  dataDiv.innerHTML = '';
+// QUANDO CLICA EM ADD, ELE VAI PARA O TBODY DO (NAME,TYPE,Length/Values)
+function adicionarCampos() {
+  const nameInput = document.getElementById('inputName');
+  const typeInput = document.getElementById('inputType');
+  const valueInput = document.getElementById('inputValue');
 
-  
-  dataDiv.insertAdjacentHTML('beforeend', getFormHtmlData());
-  
-  var addButton = document.getElementById('add-data-button');
-  addButton.addEventListener('click', function () {
-    var columnData = {};
-    columns.forEach(column => {
-      var columnInputValue = document.getElementById('input-' + column.name).value;
-      columnData[column.name] = columnInputValue;
-    });
+  if (!nameInput.value || !typeInput.value || !valueInput.value) {
+    alert('Por favor, preencha todos os campos antes de adicionar uma nova linha.');
+    return;
+  }
 
-    if (Object.values(columnData).some(value => value === '')) {
-      alert('Por favor, preencha todos os campos!');
-      return;
-    }
 
-    fetch('http://localhost:3000/add-data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 
-        tableName: tableName, 
-        rowData: columnData // Verifique se 'columnData' não é null ou undefined
-      })
-    })
+  if (!Number.isInteger(parseInt(valueInput.value))) {
+    alert('Por favor, insira um número inteiro válido para o comprimento do campo.');
+    return;
+  }
 
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then((data) => {
-        console.log(data);
-        // Limpar os campos de entrada
-        columns.forEach(column => {
-          document.getElementById('input-' + column.name).value = '';
-        });
-        // Atualizar a exibição dos dados
-        displayTableData(tableName, columns);
-      })
-      .catch((error) => {
-        console.error('There has been a problem with your fetch operation:', error);
-      });
-  });
+  if (typeInput.value === 'INT' && parseInt(valueInput.value) > 255) {
+    alert('Por favor, insira um número inteiro válido para o comprimento do campo INT, até 255.');
+    return;
+  }
 
-  fetch(`http://localhost:3000/get-data?tableName=${tableName}`, {
-    method: 'GET',
-  })
+  const novaLinha = document.createElement('tr');
+
+  novaLinha.innerHTML = `
+    <td>${nameInput.value}</td>
+    <td>${typeInput.options[typeInput.selectedIndex].value}</td> 
+    <td>${valueInput.value}</td>
+  `;
+
+  document.querySelector('.table tbody').appendChild(novaLinha);
+
+  //limpa os campos
+  nameInput.value = '';
+  typeInput.selectedIndex = 0;
+  valueInput.value = '';
+}
+
+// buscar tabela na base de dados
+function dbtabelas() {
+  fetch('http://localhost:3000/get-tables')
     .then(response => response.json())
     .then(data => {
-      var dataTableContainer = document.getElementById('dataTableContainer');
-      dataTableContainer.innerHTML = '';
-
-      // Create a new table
-      var table = document.createElement('table');
-      table.className = 'table';
-
-      // Add table headers
-      var thead = document.createElement('thead');
-      var headerRow = document.createElement('tr');
-      columns.forEach(column => {
-        var th = document.createElement('th');
-        th.textContent = column.name;
-        headerRow.appendChild(th);
+      data.tables.forEach(tabela => {
+        adicionarTabela(tabela.tableName, tabela.fields);
       });
-
-      // Adicione um cabeçalho para a coluna de botões de remover
-      var removeTh = document.createElement('th');
-      
-      headerRow.appendChild(removeTh);
-
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
-
-      // Add table data
-      var tbody = document.createElement('tbody');
-      data.forEach(row => {
-        var dataRow = document.createElement('tr');
-        columns.forEach(column => {
-          var td = document.createElement('td');
-          td.textContent = row[column.name];
-          dataRow.appendChild(td);
-        });
-        // Adicione um botão de remover a cada linha
-        var removeButton = document.createElement('button');
-        removeButton.textContent = 'Remover';
-        removeButton.className = 'btn btn-danger'; 
-        removeButton.addEventListener('click', () => {
-          removeData(tableName, row.id);
-        });
-
-
-        var removeTd = document.createElement('td');
-        removeTd.appendChild(removeButton);
-        dataRow.appendChild(removeTd);
-
-        tbody.appendChild(dataRow);
-      });
-      table.appendChild(tbody);
-
-      dataTableContainer.appendChild(table);
     })
     .catch(error => {
-      console.error('There has been a problem with your fetch operation:', error);
+      console.error('Error:', error);
     });
-
-
-// Crie um novo container para armazenar as linhas
-var rowContainer = document.createElement('div');
-rowContainer.className = 'row';
-
-columns.forEach(column => {
-  var newInputDiv = document.createElement('div');
-  newInputDiv.className = 'col-3';
-
-  var newLabel = document.createElement('label');
-  newLabel.for = 'input-' + column.name;
-  newLabel.className = 'form-label';
-  newLabel.textContent = column.name;
-
-  var newInput = document.createElement('input');
-  newInput.type = 'text';
-  newInput.className = 'form-control';
-  newInput.id = 'input-' + column.name;
-
-  newInputDiv.appendChild(newLabel);
-  newInputDiv.appendChild(newInput);
-
-  // Adicione o newInputDiv ao rowContainer, em vez da linha existente
-  rowContainer.appendChild(newInputDiv);
-});
-
-// Adicione o rowContainer ao dataDiv
-dados.appendChild(rowContainer);
 }
+// Chamar a função pegartabelas no início para carregar as tabelas existentes
+dbtabelas();
 
-function apagarTabela(tableName) {
-  var confirmDelete = confirm("Tem certeza que deseja apagar a tabela " + tableName + "?");
+// adicionar os campos e o nome da tabela a uma TABELA no html
+function adicionarTabela(nomeTabela, campos) {
+  const tabela = document.getElementById('tabela_criadas');
 
-  if (confirmDelete) {
-    fetch('http://localhost:3000/delete-table', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ tableName: tableName })
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then((data) => {
-        console.log(data);
-        // Remover o link da navbar
-        var navBar = document.getElementsByClassName('navbar-nav')[0];
-        var tableLink = document.getElementById(tableName);
-        console.log('Element to remove:', tableLink);
-        tableLink.parentNode.removeChild(tableLink);
+  // cria a linha que irá representar a tabela
+  const novaLinha = document.createElement('tr');
+  novaLinha.dataset.nomeTabela = nomeTabela;  // guarda o nome da tabela
+  novaLinha.dataset.campos = JSON.stringify(campos);  // guarda os campos da tabela
 
-        // Limpar o conteúdo do columnsDiv
-        var columnsDiv = document.getElementById('columnsDiv');
-        columnsDiv.innerHTML = '';
+  // cria as celulas que irão compor a linha
+  const cellNomeTabela = document.createElement('td');
+  const cellNomeCampo = document.createElement('td');
+  const cellTipo = document.createElement('td');
+  const cellValor = document.createElement('td');
+  const cellAcoes = document.createElement('td');
 
-        // Recarregar a página
-        location.reload();
-      })
-      .catch((error) => {
-        console.error('There has been a problem with your fetch operation:', error);
-      });
-  }
-}
+  // preenche as células com os valores
+  campos.forEach(campo => {
+    const { field: nomeCampo, type: tipo, value: valor } = campo;
 
-function removeColumn(tableName, columnName) {
-  fetch(`http://localhost:3000/remove-column`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ tableName: tableName, columnName: columnName })
-  })
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return response.text();
-  })
-  .then((data) => {
-    console.log(data);
-    // Atualizar a exibição de colunas
-    displayTableColumns(tableName);
-  })
-  .catch((error) => {
-    console.error('There has been a problem with your fetch operation:', error);
+    
+    if (nomeCampo.toLowerCase() === 'id') return; //ignorar o id
+
+    [cellNomeCampo, cellTipo, cellValor].forEach((cell, index) => {
+      const value = [nomeCampo, tipo.toUpperCase(), valor][index]; 
+      cell.innerHTML += (cell.innerHTML ? "<br>" : "") + value;
+    });
   });
+
+  cellNomeTabela.textContent = nomeTabela;
+
+  // adiciona as células criadas à nova linha
+  [cellNomeTabela, cellNomeCampo, cellTipo, cellValor, cellAcoes].forEach(cell => novaLinha.appendChild(cell));
+
+  // botão de editar
+  const editarBtn = document.createElement('button');
+  editarBtn.id = 'btnEditar'; // ID
+  editarBtn.className = "btn btn-primary";
+  editarBtn.textContent = 'Editar';
+  editarBtn.addEventListener('click', () => {
+    editarBtn.style.display = 'none'; // Oculta
+    editarLinha(novaLinha, editarBtn);
+  });
+
+  novaLinha.editarBtn = editarBtn; // Armazena a referência ao botão na linha
+  cellAcoes.appendChild(editarBtn);
+
+  //botão de excluir
+  const excluirBtn = document.createElement('button');
+  excluirBtn.textContent = 'Excluir';
+  excluirBtn.className ="btn btn-danger";
+  excluirBtn.onclick = () => excluirTabela(nomeTabela);
+  cellAcoes.appendChild(excluirBtn);
+
+
+  tabela.appendChild(novaLinha);
 }
 
-function removeData(tableName, id) {
-  fetch(`http://localhost:3000/remove-data`, {
-    method: 'POST',
+// Excluir uma tabela
+function excluirTabela(nomeTabela) {
+  // confirmação
+  if (!confirm('Você tem certeza que deseja excluir esta tabela?')) {
+    return;
+  }
+
+  fetch('http://localhost:3000/delete-table', {
+    method: 'DELETE',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ tableName: tableName, id: id })
+    body: JSON.stringify({ tableName: nomeTabela }),
   })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then((data) => {
-      console.log(data);
-      // Fetch the columns for the table again
-      fetch(`http://localhost:3000/get-table-columns/${tableName}`)
-        .then(response => response.json())
-        .then(columnData => {
-          // Use the column data to fetch the table data again
-          displayTableData(tableName, columnData.columns);
-        });
-    })
-    .catch((error) => {
-      console.error('There has been a problem with your fetch operation:', error);
-    });
-}
-
-window.onload = function () {
-  fetch('http://localhost:3000/get-tables', {
-    method: 'GET',
-  })
-    .then(response => response.json())
+    .then(response => response.text())
     .then(data => {
-      var navBar = document.getElementsByClassName('navbar-nav')[0];
-      data.tables.forEach(table_name => {
-        var newListItem = document.createElement('li');
-        newListItem.className = "nav-item";
-
-        var newLink = document.createElement('a');
-        newLink.className = "nav-link";
-        newLink.id = table_name;
-        newLink.href = "#" + table_name;
-        newLink.textContent = table_name;
-        var activeTableName = '';
-        newLink.onclick = function () {
-          activeTableName = table_name;
-          // Remove a classe 'active' de todos os links da navbar
-          var navLinks = document.getElementsByClassName('nav-link');
-          for (var i = 0; i < navLinks.length; i++) {
-            navLinks[i].classList.remove('active');
-          }
-          // Adiciona a classe 'active' ao link clicado
-          this.classList.add('active');
-
-          // Limpa o conteúdo do columnsDiv
-          var columnsDiv = document.getElementById('columnsDiv');
-          if (columnsDiv) {
-            columnsDiv.innerHTML = '';
-
-            // Exibe o conteúdo das colunas da tabela
-            displayTableColumns(table_name);
-          }
-        };
-
-        newListItem.appendChild(newLink);
-        navBar.appendChild(newListItem);
-      });
+      console.log(data);
+      // limpa o conteúdo da tabela
+      const tabela = document.getElementById('tabela_criadas');
+      tabela.innerHTML = '';
+      
+      dbtabelas();//chamar a funçao para recarregar as tabelas
     })
     .catch((error) => {
       console.error('Error:', error);
     });
-};
+}
+
+// editar os campos e o nome da tabela
+function editarLinha(linha, editarBtn) {
+  const cells = linha.getElementsByTagName('td');
+  const originalHtml = linha.innerHTML;
+
+  for (let i = 0; i < 4; i++) {
+    const cell = cells[i];
+    if (i === 0) {
+      cell.className = 'nometabela-editar';
+    }
+    else {
+      cell.className = 'campos-editar';
+    }
+    const values = cell.innerHTML.split('<br>');
+    cell.innerHTML = '';
+    values.forEach(value => {
+      if (i === 2) { // campo do tipo
+        const select = document.createElement('select');
+        select.className = 'form-control';
+        const types = ['INT', 'VARCHAR'];
+        types.forEach(type => {
+          const option = document.createElement('option');
+          option.textContent = type;
+          option.selected = (type === value);
+          select.appendChild(option);
+        });
+        cell.appendChild(select);
+      } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control';
+        input.value = value;
+        cell.appendChild(input);
+      }
+    });
+  }
+
+  // limpa a célula de ações antes de adicionar novos botões
+  cells[4].innerHTML = '';
+
+  // botão Salvar
+  const salvarBtn = document.createElement('button');
+  salvarBtn.textContent = 'Salvar';
+  salvarBtn.className = "btn btn-primary";
+  salvarBtn.onclick = () => {
+    salvarEdicoes(linha);
+    editarBtn.style.display = 'inline'; // Mostra
+  };
+  cells[4].appendChild(salvarBtn);
+
+  // botão Cancelar
+  const cancelarBtn = document.createElement('button');
+  cancelarBtn.textContent = 'Cancelar';
+  cancelarBtn.className = "btn btn-danger";
+  cancelarBtn.onclick = () => {
+    linha.innerHTML = originalHtml;
+    // reatribui o evento de clique ao botão "Editar" depois de restaurar o HTML original
+    const reattachedEditarBtn = linha.querySelector('#btnEditar');
+    reattachedEditarBtn.style.display = 'inline'; 
+   
+    reattachedEditarBtn.addEventListener('click', () => {
+      reattachedEditarBtn.style.display = 'none'; // esconde o botão de editar
+      editarLinha(linha, reattachedEditarBtn);
+    });
+  };
+  cells[4].appendChild(cancelarBtn);
+}
+
+function salvarEdicoes(linha) {
+  const cells = linha.getElementsByTagName('td');
+  const nomeTabela = { antigo: linha.dataset.nomeTabela, novo: cells[0].children[0].value };
+  const camposOriginais = JSON.parse(linha.dataset.campos).slice(1); // ignora o primeiro campo -> id
+
+  const camposEditados = Array.from(cells[1].children).map((input, index) => {
+    const campoOriginal = camposOriginais[index];
+
+    return {
+      campoAntigo: {
+        nome: campoOriginal.field,
+        tipo: campoOriginal.type,
+        valor: campoOriginal.value
+      },
+      novoCampo: {
+        nome: cells[1].children[index].value,
+        tipo: cells[2].children[index].value,
+        valor: cells[3].children[index].value
+      }
+    };
+  });
+
+  fetch('http://localhost:3000/atualizar-tabela', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ nomeTabela, campos: camposEditados }),
+  })
+    .then(response => response.text())
+    .then(data => {
+      console.log(data);
+      // limpa o conteúdo da tabela
+      const tabela = document.getElementById('tabela_criadas');
+      tabela.innerHTML = '';
+      
+      dbtabelas(); //chamar a funcao para pegar as tabelas
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+}
 
 

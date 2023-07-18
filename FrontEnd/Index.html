@@ -5,18 +5,18 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Base de dados</title>
+  <title>BD - INICIO</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <link rel="stylesheet" href="../FrontEnd/css/global.css">
+  <link rel="stylesheet" href="css/global.css">
   <script src="../sistema_bd/function.js"></script>
 </head>
 
-
+<body>
   <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      
+      <a class="navbar-brand" href="#"><img src="Logo.png" alt="" width="50px"></a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -24,41 +24,102 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" id="inputNametable" href="#" onclick="btnCriarNomeTabela()">INICIO</a>
-          </li>          
-          <!-- <li class="nav-item">
-            <a class="nav-link" href="#section1">MINHAS BASES</a>
-          </li> -->
-          
+            <a class="nav-link" href="Index.html">INICIO</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="inserir_dados.html">Minhas Tabelas</a>
+          </li>
         </ul>
       </div>
     </nav>
   </header>
 
-<body>
 
-<div id="columnsDiv"></div>
+  <!--Codigo para usuario definir o nome da tabela criada..-->
+  <div class="container border-criar">
+    <div class="nome-e-criar">
+      <div class="col-6 nomedatabela">
+        <label for="inputNametable" class="form-label"></label>
+        <input type="text" class="form-control nomedatabela2" id="inputNametable" placeholder="NOME DA TABELA">
+      </div>
+      <div class="col-6 botao-criar-tabela1">
+      <button type="button" class="btn btn-primary botao-criar-tabela" onclick="criarTabela()">Criar Tabela</button>
+    </div>
+    </div>
+    <div class="row row-criar-campos">
+      <div class="col-3">
+        <label for="inputName" class="form-label"></label>
+        <input type="text" class="form-control" id="inputName" placeholder="NAME">
+      </div>
+      <div class="col-3">
+        <label for="inputType" class="form-label"></label>
+        <select class="form-control" id="inputType">
+          <option value="" style="display: none;">TYPE</option>
+          <option value="INT">INT</option>
+          <option value="VARCHAR">VARCHAR</option>
+        </select>
+      </div>
+      <div class="col-3">
+        <label for="inputValue" class="form-label"></label>
+        <input type="number" class="form-control" id="inputValue" placeholder="Length/Values">
+      </div>
 
-<div id="dataDiv"></div>
+      <div class="col-3"><button type="button" id="CamposAdicionais" class="btn btn-primary"
+          onclick="adicionarCampos()">Criar Campo</button></div>
+
+    </div>
 
 
-</body>
-  <footer class="footer mt-auto py-3">
-    <div class="container">
-      <div class="row" style="align-items: center;">
-        <div class="col-md-12 d-flex justify-content-center">
-          <p>© 2023 Sistema Base de dados. TPSI0922 - GRUPO 4.</p>
-        </div>
+    <table class="table criacaodecampos">
+      <thead>
+        <tr>
+          <th class="letra-criar-campo nomecamp" scope="col">NOME CAMPO</th>
+          <th class="letra-criar-campo" scope="col">TIPO DO CAMPO</th>
+          <th class="letra-criar-campo" scope="col">Valor do Campo</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <div class="container">
+    <div class="row col-12" style="margin-top: 100px;">
+      <div class="col">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Nome da Tabela</th>
+              <th scope="col">Nome do Campo</th>
+              <th scope="col">Tipo do Campo</th>
+              <th scope="col">Valor do Campo</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela_criadas">
+            <!-- As linhas serão inseridas aqui pelo JavaScript -->
+          </tbody>
+        </table>
       </div>
     </div>
-  </footer>
 
-  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-    crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" 
-    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" 
-    crossorigin="anonymous">
-  </script>
-  
+
+    <footer class="footer mt-auto py-3">
+      <div class="container">
+        <div class="row" style="align-items: center;">
+          <div class="col-md-12 d-flex justify-content-center">
+            <p>© 2023 Sistema Base de dados. TPSI0922 - GRUPO 4.</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzI#"></script>
+
+</body>
+
 </html>

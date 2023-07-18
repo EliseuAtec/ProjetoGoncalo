@@ -16,185 +16,263 @@ const connection = mysql.createConnection({
   database: 'db',
 });
 
+// conectando ao banco de dados
 connection.connect((error) => {
+ 
   if (error) {
-    console.error('An error occurred while connecting to the DB:', error);
+    console.error('Ocorreu um erro ao conectar ao BD:', error);
     return;
   }
-  console.log('Successfully connected to the database!');
+  console.log('Conectado com sucesso ao banco de dados!');
 });
 
-
-//Cria a tabela
+// Criando a tabela
 app.post('/create-table', (req, res) => {
-  const { tableName } = req.body;
-  const query = `CREATE TABLE ${tableName} (id INT)`;
+  const { tableName, query } = req.body;
 
   connection.query(query, (error, results) => {
     if (error) {
-      console.error('An error occurred while creating the table:', error);
-      res.status(500).send('An error occurred while creating the table.');
+      console.error('Ocorreu um erro ao criar a tabela:', error);
+      res.status(500).send('Ocorreu um erro ao criar a tabela.');
       return;
     }
-    console.log(`Successfully created table ${tableName}!`);
-    res.send(`Successfully created table ${tableName}!`);
+   
+    console.log(`Tabela ${tableName} criada com sucesso!`);
+    res.json({ message: `Tabela ${tableName} criada com sucesso!` });
   });
 });
 
-app.post('/create-column', (req, res) => {
-  const { tableName, columnName, dataType, length } = req.body;
-  
-  // Você pode precisar validar e formatar os tipos de dados de acordo com as necessidades do seu projeto.
-  // Neste exemplo, suponho que você esteja lidando apenas com tipos de dados que podem ter um comprimento definido (como VARCHAR)
-  const query = `ALTER TABLE ${tableName} ADD ${columnName} ${dataType}(${length})`;
-
-  connection.query(query, (error, results) => {
+// rota para obter os nomes das tabelas e os campos
+app.get('/get-tables', function (req, res) {
+  // executa a consulta para mostrar todas as tabelas
+  connection.query('SHOW TABLES', async function (error, results, fields) {
+   
     if (error) {
-      console.error('An error occurred while creating the column:', error);
-      res.status(500).send('An error occurred while creating the column.');
+      console.error('Ocorreu um erro ao obter as tabelas:', error);
+      res.status(500).send('Ocorreu um erro ao obter as tabelas.');
       return;
     }
-    console.log(`Successfully added column ${columnName} to table ${tableName}!`);
-    res.send(`Successfully added column ${columnName} to table ${tableName}!`);
+
+    //mapeia os resultados para obter apenas os nomes das tabelas
+    var tables = results.map(row => row[Object.keys(row)[0]]);
+
+    // para cada tabela, cria uma nova promessa que irá obter os campos da tabela
+    var promises = tables.map(tableName => {
+      return new Promise((resolve, reject) => {
+        // executa a consulta para obter a descrição da tabela (e os campos)
+        connection.query(`DESCRIBE ${tableName}`, function (error, results, fields) {
+          // Se ocorrer um erro, rejeite a promessa
+          if (error) {
+            reject(error);
+          } else {
+            // separa o nome, tipo e valor do campo
+            var fields = results.map(row => {
+              let field = row.Field;
+              let [type, value] = row.Type.split('(');
+              value = value ? value.replace(/\D/g, '') : null;
+              return { field, type, value };
+            });
+
+            // resolve a promessa com um objeto contendo o nome da tabela e seus campos
+            resolve({ tableName, fields });
+          }
+        });
+      });
+    });
+
+    try {
+      // aguarda todas as promessas serem resolvidas
+      var tablesWithFields = await Promise.all(promises);
+      // responde com os nomes das tabelas e seus campos
+      res.json({ tables: tablesWithFields });
+    } catch (error) {
+   
+      console.error('Ocorreu um erro ao obter os campos da tabela:', error);
+      res.status(500).send('Ocorreu um erro ao obter os campos da tabela.');
+    }
   });
 });
 
-app.post('/add-data', (req, res) => {
-  const { tableName, rowData } = req.body;
+// rota para atualizar a tabela ou os campos na base de dados
+app.post('/atualizar-tabela', function(req, res) {
+  const { nomeTabela, campos } = req.body;
 
-  // Check if rowData is null or undefined
-  if (!rowData) {
-    console.error('rowData is null or undefined');
-    res.status(400).send('rowData is required');
-    return;
+  const promises = [];
+
+  // verifica se o nome da tabela foi alterado
+  if (nomeTabela.antigo !== nomeTabela.novo) {
+    let query = `RENAME TABLE ${connection.escapeId(nomeTabela.antigo)} TO ${connection.escapeId(nomeTabela.novo)}`;
+    
+    const renamePromise = new Promise((resolve, reject) => {
+      connection.query(query, function(error, results, fields) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    promises.push(renamePromise);
   }
 
-  // Prepare the SQL query string
-  const columns = Object.keys(rowData).join(',');
-  const values = Object.values(rowData).map(value => mysql.escape(value)).join(',');
+  const alterFieldPromises = campos.map(campo => {
+    // verifica se o campo foi alterado
+    let campoAlterado = campo.campoAntigo.nome !== campo.novoCampo.nome || 
+                        campo.campoAntigo.tipo !== campo.novoCampo.tipo || 
+                        campo.campoAntigo.valor !== campo.novoCampo.valor;
 
-  const query = `INSERT INTO ${tableName} (${columns}) VALUES (${values})`;
+    if (campoAlterado) {
+      // cria a consulta SQL para alterar a tabela
+      let query = `ALTER TABLE ${connection.escapeId(nomeTabela.novo)} CHANGE ${connection.escapeId(campo.campoAntigo.nome)} ${connection.escapeId(campo.novoCampo.nome)} ${campo.novoCampo.tipo}`;
 
-  connection.query(query, (error, results) => {
-    if (error) {
-      console.error('An error occurred while adding data:', error);
-      res.status(500).send('An error occurred while adding data.');
-      return;
+      if (campo.novoCampo.valor) {
+        query += `(${campo.novoCampo.valor})`;
+      }
+
+      // executa a consulta no banco de dados
+      return new Promise((resolve, reject) => {
+        connection.query(query, function(error, results, fields) {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      });
+    } else {
+      // retornar uma promessa resolvida se o campo não foi alterado
+      return Promise.resolve();
     }
-    console.log(`Successfully added data to table ${tableName}!`);
-    res.send(`Successfully added data to table ${tableName}!`);
   });
+
+  promises.push(...alterFieldPromises);
+
+  //executar as consultas em tempo real, assim vai atualizar..
+  Promise.all(promises)
+    .then(() => {
+      res.json({ message: 'Campo atualizado com sucesso.' });
+    })
+    .catch(error => {
+      res.status(500).json({ message: 'Ocorreu um erro durante a atualização do campo.', error });
+    });
 });
 
-app.post('/remove-column', (req, res) => {
-  const { tableName, columnName } = req.body;
-  
-  const query = `ALTER TABLE ${tableName} DROP COLUMN ${columnName}`;
-
-  connection.query(query, (error, results) => {
-    if (error) {
-      console.error('An error occurred while removing the column:', error);
-      res.status(500).send('An error occurred while removing the column.');
-      return;
-    }
-    console.log(`Successfully removed column ${columnName} from table ${tableName}!`);
-    res.send(`Successfully removed column ${columnName} from table ${tableName}!`);
-  });
-});
-
-app.post('/delete-table', (req, res) => {
-  const { tableName } = req.body;
+// rota para apagar a tabela na base de dados
+app.delete('/delete-table', function(req, res) {
+  const tableName = req.body.tableName;
   const query = `DROP TABLE ${tableName}`;
 
-  connection.query(query, (error, results) => {
+  connection.query(query, function(error, results, fields) {
     if (error) {
-      console.error('An error occurred while deleting the table:', error);
-      res.status(500).send('An error occurred while deleting the table.');
-      return;
+      return res.status(500).json({ message: 'Ocorreu um erro durante a exclusão da tabela.', error });
     }
-    console.log(`Successfully deleted table ${tableName}!`);
-    res.send(`Successfully deleted table ${tableName}!`);
+    res.json({ message: 'Tabela excluída com sucesso.' });
   });
 });
 
-app.post('/remove-data', (req, res) => {
-  const { tableName, id } = req.body;
+//rota para obter os dados da tabela
+app.get('/get-data/:tableName', (req, res) => {
+  const tableName = req.params.tableName;
 
-  // Certifique-se de que tanto 'tableName' quanto 'id' são fornecidos
-  if (!tableName || !id) {
-    res.status(400).send('Both tableName and id are required');
-    return;
-  }
-
-  // Prepare the SQL query string
-  const query = `DELETE FROM ${tableName} WHERE id = ?`;
-
-  connection.query(query, [id], (error, results) => {
+  connection.query(`SELECT * FROM ${tableName}`, (error, results) => {
     if (error) {
-      console.error('An error occurred while removing data:', error);
-      res.status(500).send('An error occurred while removing data.');
+      console.error(`Ocorreu um erro ao obter os dados da tabela ${tableName}:`, error);
+      res.status(500).send(`Ocorreu um erro ao obter os dados da tabela ${tableName}.`);
       return;
     }
 
-    if (results.affectedRows === 0) {
-      res.status(404).send('No data found to remove.');
+    res.json({ data: results });
+  });
+});
+
+//rota para obter os dados de uma linha da tabela
+app.get('/obter-dados/:nomeTabela/:id', (req, res) => {
+  const nomeTabela = req.params.nomeTabela;
+  const id = req.params.id;
+
+  connection.query(`SELECT * FROM ${nomeTabela} WHERE id = ?`, [id], (erro, resultados) => {
+    if (erro) {
+      console.error(`Ocorreu um erro ao obter os dados da tabela ${nomeTabela}:`, erro);
+      res.status(500).send(`Ocorreu um erro ao obter os dados da tabela ${nomeTabela}.`);
       return;
     }
 
-    console.log(`Successfully removed data from table ${tableName} with id ${id}!`);
-    res.send(`Successfully removed data from table ${tableName} with id ${id}!`);
+    res.json({ data: resultados });
+  });
+});
+
+// rota para editar os dados da tabela, os inputs com os campos...
+app.patch('/editar-dados/:nomeTabela/:id', (req, res) => {
+  const nomeTabela = req.params.nomeTabela;
+  const id = req.params.id;
+  const dados = req.body;
+
+  let sql = `UPDATE ${nomeTabela} SET ${Object.keys(dados).map(chave => `${chave} = ?`).join(', ')} WHERE id = ?`;
+
+  connection.query(sql, [...Object.values(dados), id], (erro, resultados) => {
+    if (erro) {
+      console.error(`Ocorreu um erro ao editar os dados na tabela ${nomeTabela}:`, erro);
+      res.status(500).send(`Ocorreu um erro ao editar os dados na tabela ${nomeTabela}.`);
+      return;
+    }
+
+    res.send(`Dados editados com sucesso na tabela ${nomeTabela}.`);
   });
 });
 
 
-//Obtem nomes das tabela para a navbar
-app.get('/get-tables', function (req, res) {
-  connection.query('SHOW TABLES', function (error, results, fields) {
-      if (error) throw error;
 
-      // 'results' é um array de objetos onde cada objeto tem uma propriedade que corresponde ao nome da tabela
-      // Vamos extrair os nomes das tabelas para um array
-      var tables = results.map(row => row[Object.keys(row)[0]]);
+// rota para obter a estrutura da tabela 
+app.get('/get-structure/:tableName', (req, res) => {
+  const tableName = req.params.tableName;
 
-      // Retornar o array de nomes das tabelas como um objeto JSON
-      res.json({ tables: tables });
-  });
-});
-
-app.get('/get-table-columns/:tableName', function (req, res) {
-  const { tableName } = req.params;
-  connection.query(`SHOW COLUMNS FROM ${tableName}`, function (error, results) {
-    if (error) throw error;
-    const columns = results.map(row => ({
-      name: row.Field,
-      type: row.Type,
-      length: row.Length
-    }));
-    res.json({ columns: columns });
-  });
-});
-
-app.get('/get-data', (req, res) => {
-  const tableName = req.query.tableName;
-
-  if (!tableName) {
-    res.status(400).send('Table name is required');
-    return;
-  }
-
-  const query = `SELECT * FROM ${tableName}`;
-
-  connection.query(query, (error, results) => {
+  connection.query(`SHOW COLUMNS FROM ${tableName}`, (error, results) => {
     if (error) {
-      console.error('An error occurred while getting data:', error);
-      res.status(500).send('An error occurred while getting data.');
+      console.error(`Ocorreu um erro ao obter a estrutura da tabela ${tableName}:`, error);
+      res.status(500).send(`Ocorreu um erro ao obter a estrutura da tabela ${tableName}.`);
       return;
     }
 
-    res.send(results);
+    res.json({ structure: results });
   });
 });
 
+
+// rota para inserir novos dados nos campos da tabela
+app.post('/insert-data/:tableName', (req, res) => {
+  const tableName = req.params.tableName;
+  const dados = req.body;
+
+  let sql = `INSERT INTO ${tableName} (${Object.keys(dados).join(',')}) VALUES (${Object.values(dados).map(() => '?').join(',')})`;
+
+  connection.query(sql, Object.values(dados), (error, results) => {
+    if (error) {
+      console.error(`Ocorreu um erro ao inserir dados na tabela ${tableName}:`, error);
+      res.status(500).send(`Ocorreu um erro ao inserir dados na tabela ${tableName}.`);
+      return;
+    }
+
+    res.send(`Dados inseridos com sucesso na tabela ${tableName}.`);
+  });
+});
+
+
+//rota para deletar o card com os dados do campo...
+app.delete('/delete-data/:tableName/:id', (req, res) => {
+  const { tableName, id } = req.params;
+  connection.query(`DELETE FROM ?? WHERE id = ?`, [tableName, id], (error, results) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Ocorreu um erro');
+    } else {
+      res.send(`Registro com id ${id} deletado da tabela ${tableName}`);
+    }
+  });
+});
+
+
+// iniciar o servidor
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+  console.log(`Servidor iniciado na porta ${port}`)
+})
