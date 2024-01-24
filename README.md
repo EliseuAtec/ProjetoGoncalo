@@ -1,10 +1,3 @@
-## COLABORADORES
-#### Esther Candido
-#### Eliseu Candido
-#### Ruben Alves
-<hr/>
-
-
 ﻿# ProjetoGoncalo
 
 Projeto para gerenciar um banco de dados personalizado.
@@ -38,7 +31,7 @@ Após iniciar o servidor e abrir o frontend no navegador, você pode interagir c
 
 ## Criadores
 
-Este projeto foi criado com ❤️ por:
+Este projeto foi criado por:
 
 - Eliseu Candido
 - Esther Candido
